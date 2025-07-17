@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Funcionários - Sistema de Escalas{% endblock %}
+{% block page_title %}Gestão de Funcionários{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Funcionários</h2>
+    <div class="d-flex gap-2">
+        {% if mostrar_inativos %}
+            <a href="{{ url_for('funcionarios') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-eye"></i> Ver Apenas Ativos
+            </a>
+        {% else %}
+            <a href="{{ url_for('funcionarios', mostrar_inativos='true') }}" class="btn btn-outline-info">
+                <i class="fas fa-eye-slash"></i> Ver Inativos Também
+            </a>
+        {% endif %}
+        <a href="{{ url_for('adicionar_funcionario') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Adicionar Funcionário
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if funcionarios %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Valência</th>
+                        <th>Estado</th>
+                        <th>Restrições</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for funcionario in funcionarios %}
+                    <tr>
+                        <td>
+                            <strong>{{ funcionario.nome }}</strong>
+                        </td>
+                        <td>{{ funcionario.email }}</td>
+                        <td>{{ funcionario.telefone or '-' }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ funcionario.valencia }}</span>
+                        </td>
+                        <td>
+                            {% if funcionario.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if funcionario.restricoes %}
+                                <span class="badge bg-warning">{{ funcionario.restricoes|length }} restrições</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">Sem restrições</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                        title="Gerir Restrições" onclick="mostrarRestricoes({{ funcionario.id }}, '{{ funcionario.nome }}')">
+                                    <i class="fas fa-calendar-times"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if funcionario.ativo %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                            title="Desativar" onclick="confirmarDesativar({{ funcionario.id }}, '{{ funcionario.nome }}')">
+                                        <i class="fas fa-user-slash"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            title="Ativar" onclick="confirmarAtivar({{ funcionario.id }}, '{{ funcionario.nome }}')">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        title="Eliminar" onclick="confirmarEliminar({{ funcionario.id }}, '{{ funcionario.nome }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum funcionário encontrado</h5>
+            <p class="text-muted">Adicione o primeiro funcionário para começar.</p>
+            <a href="{{ url_for('adicionar_funcionario') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Adicionar Funcionário
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Restrições -->
+<div class="modal fade" id="modalRestricoes" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Restrições - <span id="nomeFuncionario"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conteudoRestricoes">
+                    <!-- Conteúdo será carregado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulários para ações -->
+<form id="formEliminar" method="POST" style="display: none;">
+</form>
+
+<form id="formDesativar" method="POST" style="display: none;">
+</form>
+
+<form id="formAtivar" method="POST" style="display: none;">
+</form>
+
+<script>
+function confirmarEliminar(id, nome) {
+    if (confirm('Tem certeza que deseja ELIMINAR permanentemente o funcionário "' + nome + '"?\n\nEsta ação não pode ser desfeita e eliminará todas as escalas e restrições associadas.')) {
+        const form = document.getElementById('formEliminar');
+        form.action = '/funcionarios/' + id + '/eliminar';
+        form.submit();
+    }
+}
+
+function confirmarDesativar(id, nome) {
+    if (confirm('Tem certeza que deseja DESATIVAR o funcionário "' + nome + '"?\n\nO funcionário não será eliminado, mas não aparecerá mais nas listas ativas.')) {
+        const form = document.getElementById('formDesativar');
+        form.action = '/funcionarios/' + id + '/desativar';
+        form.submit();
+    }
+}
+
+function confirmarAtivar(id, nome) {
+    if (confirm('Tem certeza que deseja ATIVAR o funcionário "' + nome + '"?\n\nO funcionário voltará a aparecer nas listas ativas.')) {
+        const form = document.getElementById('formAtivar');
+        form.action = '/funcionarios/' + id + '/ativar';
+        form.submit();
+    }
+}
+
+function mostrarRestricoes(funcionarioId, nome) {
+    document.getElementById('nomeFuncionario').textContent = nome;
+    
+    // Carregar restrições via AJAX
+    fetch(`/funcionarios/${funcionarioId}/restricoes`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('conteudoRestricoes').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('modalRestricoes')).show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar restrições:', error);
+            document.getElementById('conteudoRestricoes').innerHTML = '<div class="alert alert-danger">Erro ao carregar restrições.</div>';
+            new bootstrap.Modal(document.getElementById('modalRestricoes')).show();
+        });
+}
+</script>
+{% endblock %} 

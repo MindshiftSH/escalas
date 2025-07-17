@@ -1,0 +1,13 @@
+# Configurações de Segurança
+# IMPORTANTE: Altere esta chave em produção!
+SECRET_KEY=sua_chave_secreta_muito_segura_aqui_2024
+
+# Configurações do Banco de Dados
+DATABASE_URL=sqlite:///escalas.db
+
+# Configurações do Flask
+FLASK_ENV=development
+FLASK_DEBUG=True
+
+# Configurações de Segurança (Produção)
+# SESSION_COOKIE_SECURE=True 

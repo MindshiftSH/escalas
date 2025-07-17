@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Turnos - Sistema de Escalas{% endblock %}
+{% block page_title %}Gestão de Turnos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Turnos</h2>
+    <button type="button" class="btn btn-primary" onclick="mostrarModalTurno()">
+        <i class="fas fa-plus"></i> Adicionar Turno
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if turnos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Horário</th>
+                        <th>Valência</th>
+                        <th>Funcionários Necessários</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for turno in turnos %}
+                    <tr>
+                        <td>
+                            <strong>{{ turno.nome }}</strong>
+                        </td>
+                        <td>
+                            <i class="fas fa-clock text-muted"></i>
+                            {{ turno.hora_inicio.strftime('%H:%M') }} - {{ turno.hora_fim.strftime('%H:%M') }}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ turno.valencia }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ turno.funcionarios_necessarios }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editarTurno({{ turno.id }}, '{{ turno.nome }}', '{{ turno.valencia }}', {{ turno.funcionarios_necessarios }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminarTurno({{ turno.id }}, '{{ turno.nome }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum turno encontrado</h5>
+            <p class="text-muted">Adicione o primeiro turno para começar.</p>
+            <button type="button" class="btn btn-primary" onclick="mostrarModalTurno()">
+                <i class="fas fa-plus"></i> Adicionar Turno
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar Turno -->
+<div class="modal fade" id="modalTurno" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTurnoTitulo">
+                    <i class="fas fa-clock"></i> Adicionar Novo Turno
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formTurno" method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">Nome do Turno *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="valencia" class="form-label">Valência *</label>
+                            <select class="form-select" id="valencia" name="valencia" required>
+                                <option value="">Selecione uma valência</option>
+                                <option value="Creche">Creche</option>
+                                <option value="Jardim de Infância">Jardim de Infância</option>
+                                <option value="ATL">ATL</option>
+                                <option value="Centro de Dia">Centro de Dia</option>
+                                <option value="Lar de Idosos">Lar de Idosos</option>
+                                <option value="Centro de Acolhimento">Centro de Acolhimento</option>
+                                <option value="Serviço de Apoio Domiciliário">Serviço de Apoio Domiciliário</option>
+                                <option value="Centro Comunitário">Centro Comunitário</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="hora_inicio" class="form-label">Hora de Início *</label>
+                            <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="hora_fim" class="form-label">Hora de Fim *</label>
+                            <input type="time" class="form-control" id="hora_fim" name="hora_fim" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="funcionarios_necessarios" class="form-label">Funcionários Necessários *</label>
+                            <input type="number" class="form-control" id="funcionarios_necessarios" name="funcionarios_necessarios" min="1" value="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Turno
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário para eliminar turno -->
+<form id="formEliminarTurno" method="POST" style="display: none;">
+</form>
+
+<script>
+function mostrarModalTurno() {
+    // Limpar formulário
+    document.getElementById('formTurno').reset();
+    document.getElementById('modalTurnoTitulo').innerHTML = '<i class="fas fa-clock"></i> Adicionar Novo Turno';
+    document.getElementById('formTurno').action = '{{ url_for("adicionar_turno") }}';
+    
+    // Mostrar modal
+    new bootstrap.Modal(document.getElementById('modalTurno')).show();
+}
+
+function editarTurno(id, nome, valencia, funcionariosNecessarios) {
+    // Preencher formulário
+    document.getElementById('nome').value = nome;
+    document.getElementById('valencia').value = valencia;
+    document.getElementById('funcionarios_necessarios').value = funcionariosNecessarios;
+    
+    // Atualizar título e ação
+    document.getElementById('modalTurnoTitulo').innerHTML = '<i class="fas fa-edit"></i> Editar Turno';
+    document.getElementById('formTurno').action = `/turnos/editar/${id}`;
+    
+    // Mostrar modal
+    new bootstrap.Modal(document.getElementById('modalTurno')).show();
+}
+
+function confirmarEliminarTurno(id, nome) {
+    if (confirm(`Tem certeza que deseja eliminar o turno "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        const form = document.getElementById('formEliminarTurno');
+        form.action = `/turnos/${id}/eliminar`;
+        form.submit();
+    }
+}
+
+// Validação do formulário
+document.getElementById('formTurno').addEventListener('submit', function(e) {
+    const horaInicio = document.getElementById('hora_inicio').value;
+    const horaFim = document.getElementById('hora_fim').value;
+    
+    if (horaInicio && horaFim && horaInicio >= horaFim) {
+        e.preventDefault();
+        alert('A hora de início deve ser anterior à hora de fim.');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

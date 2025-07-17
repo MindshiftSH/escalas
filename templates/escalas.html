@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Escalas - Sistema de Escalas{% endblock %}
+{% block page_title %}Escala Mensal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-magic"></i> Gerar Escalas Automáticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('gerar_escalas') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="mes" class="form-label">Mês *</label>
+                            <select class="form-select" id="mes" name="mes" required>
+                                {% for m in range(1, 13) %}
+                                    <option value="{{ m }}" {% if m == mes|int %}selected{% endif %}>{{ ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m-1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="ano" class="form-label">Ano *</label>
+                            <input type="number" class="form-control" id="ano" name="ano" value="{{ ano }}" min="2024" max="2030" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valencia" class="form-label">Valência *</label>
+                            <select class="form-select" id="valencia" name="valencia" required>
+                                <option value="">Selecione uma valência</option>
+                                <option value="Lar de Idosos" {% if request.args.get('valencia') == 'Lar de Idosos' %}selected{% endif %}>Lar de Idosos</option>
+                                <option value="Creche" {% if request.args.get('valencia') == 'Creche' %}selected{% endif %}>Creche</option>
+                                <!-- Adicione outras valências se necessário -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="submit" name="tipo_geracao" value="normal" class="btn btn-primary w-100">
+                                <i class="fas fa-magic"></i> Gerar Escalas Normais
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" name="tipo_geracao" value="otimizada" class="btn btn-success w-100">
+                                <i class="fas fa-star"></i> Gerar Escalas Otimizadas
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Escalas Otimizadas:</strong> Gera múltiplas opções por dia e compila a melhor solução mensal para máxima eficiência.
+                    </small>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar"></i> Visualizar Escalas
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('escalas') }}">
+                    <div class="mb-3">
+                        <label for="mes_view" class="form-label">Mês</label>
+                        <select class="form-select" id="mes_view" name="mes">
+                            {% for m in range(1, 13) %}
+                                <option value="{{ m }}" {% if m == mes|int %}selected{% endif %}>{{ ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m-1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ano_view" class="form-label">Ano</label>
+                        <input type="number" class="form-control" id="ano_view" name="ano" value="{{ ano }}" min="2024" max="2030">
+                    </div>
+                    <div class="mb-3">
+                        <label for="valencia_view" class="form-label">Valência</label>
+                        <select class="form-select" id="valencia_view" name="valencia">
+                            <option value="">Selecione uma valência</option>
+                            <option value="Lar de Idosos" {% if valencia == 'Lar de Idosos' %}selected{% endif %}>Lar de Idosos</option>
+                            <option value="Creche" {% if valencia == 'Creche' %}selected{% endif %}>Creche</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-search"></i> Visualizar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-alt"></i> Escala Mensal - {{ mes }}/{{ ano }}
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if escalas %}
+        {% set dias_no_mes = [] %}
+        {% set ano_int = ano|int %}
+        {% set mes_int = mes|int %}
+        {% set funcionarios = escalas|map(attribute='funcionario')|unique|list %}
+        {% set funcionarios = funcionarios|sort(attribute='nome') %}
+        {% set primeira_data = escalas[0].data.replace(day=1) if escalas else namespace() %}
+        {% set dias_no_mes = range(1, 32) %}
+        {% if mes_int == 2 %}
+            {% set dias_no_mes = range(1, 30) if ano_int % 4 == 0 and ano_int % 100 != 0 or ano_int % 400 == 0 else range(1, 29) %}
+        {% elif mes_int in [4, 6, 9, 11] %}
+            {% set dias_no_mes = range(1, 31) %}
+        {% else %}
+            {% set dias_no_mes = range(1, 32) %}
+        {% endif %}
+        {% set turnos_codigos = {'M': 'Manhã', 'I': 'Intermédio', 'T': 'Tarde', 'N': 'Noite'} %}
+        
+        <!-- Resumo Estatístico -->
+        {% set total_escalas = escalas|length %}
+        {% set total_funcionarios = funcionarios|length %}
+        {% set media_por_funcionario = (total_escalas / total_funcionarios)|round(1) if total_funcionarios > 0 else 0 %}
+        
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total de Escalas</h6>
+                        <h3 class="mb-0">{{ total_escalas }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Funcionários</h6>
+                        <h3 class="mb-0">{{ total_funcionarios }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Média por Funcionário</h6>
+                        <h3 class="mb-0">{{ media_por_funcionario }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Dias no Mês</h6>
+                        <h3 class="mb-0">{{ dias_no_mes|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle text-center" style="font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        <th style="min-width: 160px;">Equipa</th>
+                        {% for dia in dias_no_mes %}
+                            {% set data = datetime(ano_int, mes_int, dia).date() %}
+                            <th style="min-width: 32px;">
+                                {{ dia }}<br>
+                                <span style="font-size:0.7em; color:#888;">{{ ["S","T","Q","Q","S","S","D"][data.weekday()] }}</span>
+                            </th>
+                        {% endfor %}
+                        <th class="total-cell">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for funcionario in funcionarios %}
+                    {% set total_trabalhados = 0 %}
+                    <tr>
+                        <td class="text-start"><strong>{{ funcionario.nome }}</strong></td>
+                        {% for dia in dias_no_mes %}
+                            {% set escala = (escalas|selectattr('funcionario_id', 'equalto', funcionario.id)|selectattr('data.day', 'equalto', dia)|list).0 %}
+                            {% if escala %}
+                                {% set turno = escala.turno.nome if escala.turno else '' %}
+                                {% set codigo = turno[0]|upper if turno else '' %}
+                                {% set total_trabalhados = total_trabalhados + 1 %}
+                                <td class="turno-{{ codigo }}" title="{{ turnos_codigos.get(codigo, turno) }}">{{ codigo }}</td>
+                            {% else %}
+                                <td class="bg-light">-</td>
+                            {% endif %}
+                        {% endfor %}
+                        <td class="fw-bold total-cell">{{ total_trabalhados_por_funcionario.get(funcionario.id, 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Total por turno</th>
+                        {% for dia in dias_no_mes %}
+                            {% set contagem = {'M':0, 'I':0, 'T':0, 'N':0} %}
+                            {% for escala in escalas if escala.data.day == dia %}
+                                {% set turno = escala.turno.nome if escala.turno else '' %}
+                                {% set codigo = turno[0]|upper if turno else '' %}
+                                {% if codigo in contagem %}
+                                    {% set _ = contagem.update({codigo: contagem[codigo]+1}) %}
+                                {% endif %}
+                            {% endfor %}
+                            <td style="padding:0;">
+                                <span class="badge turno-M" title="Manhã">M: {{ contagem['M'] }}</span><br>
+                                <span class="badge turno-I" title="Intermédio">I: {{ contagem['I'] }}</span><br>
+                                <span class="badge turno-T" title="Tarde">T: {{ contagem['T'] }}</span><br>
+                                <span class="badge turno-N" title="Noite">N: {{ contagem['N'] }}</span>
+                            </td>
+                        {% endfor %}
+                        <td></td>
+                    </tr>
+                    <tr class="table-info">
+                        <th>Total Geral</th>
+                        {% for dia in dias_no_mes %}
+                            {% set total_dia = 0 %}
+                            {% for escala in escalas if escala.data.day == dia %}
+                                {% set total_dia = total_dia + 1 %}
+                            {% endfor %}
+                            <td class="fw-bold">{{ total_dia }}</td>
+                        {% endfor %}
+                        {% set total_geral = 0 %}
+                        {% for funcionario in funcionarios %}
+                            {% set total_func = 0 %}
+                            {% for escala in escalas if escala.funcionario_id == funcionario.id %}
+                                {% set total_func = total_func + 1 %}
+                            {% endfor %}
+                            {% set total_geral = total_geral + total_func %}
+                        {% endfor %}
+                        <td class="fw-bold text-primary">{{ total_geral }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <style>
+            .turno-M { background: #ffe082; font-weight: bold; } /* Manhã */
+            .turno-I { background: #b3e5fc; font-weight: bold; } /* Intermédio */
+            .turno-T { background: #c8e6c9; font-weight: bold; } /* Tarde */
+            .turno-N { background: #d1c4e9; font-weight: bold; } /* Noite */
+            
+            /* Estilo para a coluna total */
+            .table th:last-child,
+            .table td:last-child {
+                background-color: #f8f9fa !important;
+                border-left: 2px solid #dee2e6;
+            }
+            
+            /* Destaque para totais */
+            .total-cell {
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+                font-weight: bold;
+                color: #1976d2 !important;
+            }
+        </style>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhuma escala encontrada</h5>
+            <p class="text-muted">Gere escalas automáticas para visualizar aqui.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

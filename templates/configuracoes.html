@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações - Sistema de Escalas{% endblock %}
+{% block page_title %}Configurações das Valências{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Configurações</h2>
+    <a href="{{ url_for('adicionar_configuracao') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Adicionar Configuração
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if configs %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Valência</th>
+                        <th>Horário de Funcionamento</th>
+                        <th>Dias de Funcionamento</th>
+                        <th>Rodízio</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for config in configs %}
+                    <tr>
+                        <td>
+                            <strong>{{ config.valencia }}</strong>
+                        </td>
+                        <td>
+                            <i class="fas fa-clock text-muted"></i>
+                            {{ config.hora_abertura.strftime('%H:%M') }} - {{ config.hora_fecho.strftime('%H:%M') }}
+                        </td>
+                        <td>
+                            {% set dias = config.dias_funcionamento|from_json %}
+                            {% for dia in dias %}
+                                <span class="badge bg-info">{{ dia }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if config.ativar_rodizio %}
+                                {% if config.padrao_rodizio %}
+                                    {% set padrao = config.padrao_rodizio|from_json %}
+                                    {% set descricao = [] %}
+                                    {% for p in padrao %}
+                                        {% if p.tipo == 'trabalho' %}
+                                            {% set descricao = descricao + [p.dias|string + 'T'] %}
+                                        {% else %}
+                                            {% set descricao = descricao + [p.dias|string + 'F'] %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="badge bg-success">{{ descricao|join(', ') }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Padrão não definido</span>
+                                {% endif %}
+                                <br><small class="text-muted">Início: {{ config.data_inicio_rodizio.strftime('%d/%m/%Y') if config.data_inicio_rodizio else 'Não definido' }}</small>
+                            {% else %}
+                                <span class="badge bg-secondary">Desativado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('editar_configuracao', id=config.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('apagar_escalas_futuras', id=config.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja apagar TODAS as escalas futuras de {{ config.valencia }}? Esta ação não pode ser desfeita!')">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Apagar escalas futuras">
+                                        <i class="fas fa-calendar-times"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('eliminar_configuracao', id=config.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja eliminar a configuração de {{ config.valencia }}?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhuma configuração encontrada</h5>
+            <p class="text-muted">Adicione configurações para as valências.</p>
+            <a href="{{ url_for('adicionar_configuracao') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Adicionar Configuração
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

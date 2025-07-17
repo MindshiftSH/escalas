@@ -1,0 +1,104 @@
+<!-- Lista de Restrições -->
+<div class="mb-4">
+    <h6>Restrições Atuais</h6>
+    {% if restricoes %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Data Início</th>
+                        <th>Data Fim</th>
+                        <th>Descrição</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for restricao in restricoes %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-{{ 'warning' if restricao.tipo == 'ferias' else 'danger' if restricao.tipo == 'doenca' else 'info' }}">
+                                {{ restricao.tipo.title() }}
+                            </span>
+                        </td>
+                        <td>{{ restricao.data_inicio.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ restricao.data_fim.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ restricao.descricao or '-' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('eliminar_restricao', id=restricao.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('Tem certeza que deseja eliminar esta restrição?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhuma restrição encontrada para este funcionário.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Formulário para Adicionar Restrição -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="fas fa-plus"></i> Adicionar Nova Restrição
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('adicionar_restricao', id=funcionario.id) }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="tipo" class="form-label">Tipo de Restrição *</label>
+                    <select class="form-select" id="tipo" name="tipo" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="ferias">Férias</option>
+                        <option value="doenca">Doença</option>
+                        <option value="folga">Folga</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <input type="text" class="form-control" id="descricao" name="descricao" 
+                           placeholder="Descrição opcional">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="data_inicio" class="form-label">Data de Início *</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="data_fim" class="form-label">Data de Fim *</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                </div>
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Adicionar Restrição
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const dataInicio = new Date(document.getElementById('data_inicio').value);
+    const dataFim = new Date(document.getElementById('data_fim').value);
+    
+    if (dataInicio > dataFim) {
+        e.preventDefault();
+        alert('A data de início não pode ser posterior à data de fim.');
+        return false;
+    }
+});
+</script> 

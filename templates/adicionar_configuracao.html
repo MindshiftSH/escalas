@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}{% if editar %}Editar{% else %}Adicionar{% endif %} Configuração - Sistema de Escalas{% endblock %}
+{% block page_title %}{% if editar %}Editar{% else %}Adicionar{% endif %} Configuração de Valência{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cog"></i> Configuração da Valência
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="valencia" class="form-label">Valência *</label>
+                            <select class="form-select" id="valencia" name="valencia" required {% if editar %}readonly disabled{% endif %}>
+                                <option value="">Selecione uma valência</option>
+                                <option value="Creche" {% if editar and config.valencia == 'Creche' %}selected{% endif %}>Creche</option>
+                                <option value="Jardim de Infância" {% if editar and config.valencia == 'Jardim de Infância' %}selected{% endif %}>Jardim de Infância</option>
+                                <option value="ATL" {% if editar and config.valencia == 'ATL' %}selected{% endif %}>ATL</option>
+                                <option value="Centro de Dia" {% if editar and config.valencia == 'Centro de Dia' %}selected{% endif %}>Centro de Dia</option>
+                                <option value="Lar de Idosos" {% if editar and config.valencia == 'Lar de Idosos' %}selected{% endif %}>Lar de Idosos</option>
+                                <option value="Centro de Acolhimento" {% if editar and config.valencia == 'Centro de Acolhimento' %}selected{% endif %}>Centro de Acolhimento</option>
+                                <option value="Serviço de Apoio Domiciliário" {% if editar and config.valencia == 'Serviço de Apoio Domiciliário' %}selected{% endif %}>Serviço de Apoio Domiciliário</option>
+                                <option value="Centro Comunitário" {% if editar and config.valencia == 'Centro Comunitário' %}selected{% endif %}>Centro Comunitário</option>
+                                <option value="Outro" {% if editar and config.valencia == 'Outro' %}selected{% endif %}>Outro</option>
+                            </select>
+                            <div class="invalid-feedback">Selecione uma valência.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Dias de Funcionamento *</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="monday" id="monday" {% if editar and 'monday' in dias_funcionamento %}checked{% endif %} required>
+                                        <label class="form-check-label" for="monday">Segunda-feira</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="tuesday" id="tuesday" {% if editar and 'tuesday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="tuesday">Terça-feira</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="wednesday" id="wednesday" {% if editar and 'wednesday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="wednesday">Quarta-feira</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="thursday" id="thursday" {% if editar and 'thursday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="thursday">Quinta-feira</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="friday" id="friday" {% if editar and 'friday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="friday">Sexta-feira</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="saturday" id="saturday" {% if editar and 'saturday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="saturday">Sábado</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="dias_funcionamento" value="sunday" id="sunday" {% if editar and 'sunday' in dias_funcionamento %}checked{% endif %}>
+                                        <label class="form-check-label" for="sunday">Domingo</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">Selecione pelo menos um dia de funcionamento.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="hora_abertura" class="form-label">Hora de Abertura *</label>
+                            <input type="time" class="form-control" id="hora_abertura" name="hora_abertura" required min="06:00" max="23:59" value="{% if editar %}{{ config.hora_abertura.strftime('%H:%M') }}{% endif %}">
+                            <div class="invalid-feedback">Informe a hora de abertura.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="hora_fecho" class="form-label">Hora de Fecho *</label>
+                            <input type="time" class="form-control" id="hora_fecho" name="hora_fecho" required min="06:00" max="23:59" value="{% if editar %}{{ config.hora_fecho.strftime('%H:%M') }}{% endif %}">
+                            <div class="invalid-feedback">Informe a hora de fecho.</div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3">Configuração de Rodízio</h5>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="ativar_rodizio" id="ativar_rodizio" {% if editar and config.ativar_rodizio %}checked{% endif %}>
+                                <label class="form-check-label" for="ativar_rodizio">
+                                    <strong>Ativar rodízio automático</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">Se ativado, aplicará automaticamente folgas de rodízio aos funcionários</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="campos_rodizio" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio_rodizio" class="form-label">Data de Início do Rodízio *</label>
+                            <input type="date" class="form-control" id="data_inicio_rodizio" name="data_inicio_rodizio" {% if editar and config.data_inicio_rodizio %}value="{{ config.data_inicio_rodizio }}"{% endif %}>
+                            <small class="text-muted">Data a partir da qual o padrão será aplicado</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> Configurar Padrão de Rodízio</h6>
+                                <p class="mb-0">Defina o padrão de trabalho e folgas para esta valência. Exemplo: 6T+2F, 4T+2F para Lar de Idosos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="padrao_rodizio" style="display: none;">
+                        <div class="col-12 mb-3">
+                            <h6>Padrão de Rodízio Personalizado</h6>
+                            <div id="periodos_container">
+                                <!-- Os períodos serão adicionados aqui dinamicamente -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="adicionar_periodo">
+                                <i class="fas fa-plus"></i> Adicionar Período
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('configuracoes') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuração
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let periodoCounter = 0;
+
+function renderPeriodosIniciais() {
+    {% if editar and padrao_rodizio %}
+        const periodos = {{ padrao_rodizio|tojson }};
+        for (const p of periodos) {
+            adicionarPeriodo(p.tipo, p.dias);
+        }
+    {% endif %}
+}
+
+document.getElementById('ativar_rodizio').addEventListener('change', function() {
+    const camposRodizio = document.getElementById('campos_rodizio');
+    const padraoRodizio = document.getElementById('padrao_rodizio');
+    if (this.checked) {
+        camposRodizio.style.display = 'flex';
+        padraoRodizio.style.display = 'block';
+        if (document.querySelectorAll('.periodo-item').length === 0) {
+            renderPeriodosIniciais();
+            if (document.querySelectorAll('.periodo-item').length === 0) {
+                adicionarPeriodo();
+            }
+        }
+    } else {
+        camposRodizio.style.display = 'none';
+        padraoRodizio.style.display = 'none';
+        document.getElementById('periodos_container').innerHTML = '';
+        periodoCounter = 0;
+    }
+});
+
+document.getElementById('adicionar_periodo').addEventListener('click', function() {
+    adicionarPeriodo();
+});
+
+function adicionarPeriodo(tipo = 'trabalho', dias = 1) {
+    const container = document.getElementById('periodos_container');
+    const periodoDiv = document.createElement('div');
+    periodoDiv.className = 'periodo-item border rounded p-3 mb-2';
+    periodoDiv.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Tipo de Período</label>
+                <select class="form-select" name="periodo_${periodoCounter}_tipo" required>
+                    <option value="trabalho" ${tipo === 'trabalho' ? 'selected' : ''}>Trabalho</option>
+                    <option value="folga" ${tipo === 'folga' ? 'selected' : ''}>Folga</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Número de Dias</label>
+                <input type="number" class="form-control" name="periodo_${periodoCounter}_dias" min="1" max="31" value="${dias}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" class="btn btn-sm btn-outline-danger d-block" onclick="removerPeriodo(this)">
+                    <i class="fas fa-trash"></i> Remover
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(periodoDiv);
+    periodoCounter++;
+}
+
+function removerPeriodo(button) {
+    const periodoItem = button.closest('.periodo-item');
+    if (periodoItem) {
+        periodoItem.remove();
+        // Reorganizar os nomes dos campos após remoção
+        reorganizarNomesCampos();
+    }
+}
+
+function reorganizarNomesCampos() {
+    const periodos = document.querySelectorAll('.periodo-item');
+    periodos.forEach((periodo, index) => {
+        const tipoSelect = periodo.querySelector('select[name^="periodo_"]');
+        const diasInput = periodo.querySelector('input[name^="periodo_"]');
+        
+        if (tipoSelect) {
+            tipoSelect.name = `periodo_${index}_tipo`;
+        }
+        if (diasInput) {
+            diasInput.name = `periodo_${index}_dias`;
+        }
+    });
+    periodoCounter = periodos.length;
+}
+
+// Inicialização ao carregar a página
+window.onload = function() {
+    const ativarRodizio = document.getElementById('ativar_rodizio');
+    if (ativarRodizio.checked) {
+        document.getElementById('campos_rodizio').style.display = 'flex';
+        document.getElementById('padrao_rodizio').style.display = 'block';
+        renderPeriodosIniciais();
+    }
+    
+    // Se estiver editando e não há períodos, adicionar um período padrão
+    {% if editar and config.ativar_rodizio and not padrao_rodizio %}
+        if (document.querySelectorAll('.periodo-item').length === 0) {
+            adicionarPeriodo('trabalho', 6);
+            adicionarPeriodo('folga', 2);
+        }
+    {% endif %}
+};
+
+// Validação visual Bootstrap
+(function () {
+  'use strict'
+  var forms = document.querySelectorAll('form')
+  Array.prototype.slice.call(forms)
+    .forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        form.classList.add('was-validated')
+      }, false)
+    })
+})()
+</script>
+{% endblock %} 

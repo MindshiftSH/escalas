@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Início - Sistema de Escalas{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Funcionários</h5>
+                <p class="card-text display-6">{{ funcionarios|length if funcionarios else 0 }}</p>
+                <a href="{{ url_for('funcionarios') }}" class="btn btn-primary">Gerir Funcionários</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Turnos</h5>
+                <p class="card-text display-6">{{ turnos|length if turnos else 0 }}</p>
+                <a href="{{ url_for('turnos') }}" class="btn btn-success">Gerir Turnos</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Escalas</h5>
+                <p class="card-text display-6">{{ escalas|length if escalas else 0 }}</p>
+                <a href="{{ url_for('escalas') }}" class="btn btn-info">Ver Escalas</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-cog fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Valências</h5>
+                <p class="card-text display-6">{{ valencias|length if valencias else 0 }}</p>
+                <a href="{{ url_for('configuracoes') }}" class="btn btn-warning">Configurações</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks"></i> Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('adicionar_funcionario') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus"></i> Adicionar Funcionário
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('adicionar_turno') }}" class="btn btn-outline-success">
+                                <i class="fas fa-plus-circle"></i> Criar Novo Turno
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('adicionar_configuracao') }}" class="btn btn-outline-warning">
+                                <i class="fas fa-building"></i> Configurar Valência
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('escalas') }}" class="btn btn-outline-info">
+                                <i class="fas fa-magic"></i> Gerar Escalas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Informações
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    <strong>Sistema de Escalas Automáticas</strong><br>
+                    Este sistema permite gerir funcionários, turnos e gerar escalas automaticamente para diferentes valências sociais.
+                </p>
+                <hr>
+                <p class="text-muted">
+                    <strong>Funcionalidades:</strong>
+                </p>
+                <ul class="text-muted">
+                    <li>Gestão de funcionários</li>
+                    <li>Configuração de turnos</li>
+                    <li>Definição de restrições</li>
+                    <li>Geração automática de escalas</li>
+                    <li>Visualização de calendário</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
