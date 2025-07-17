@@ -666,8 +666,12 @@ def gerar_escalas():
         otimizador = OtimizadorMensal(mes, ano, valencia)
         melhor_escala = otimizador.gerar_escala_mensal_completa()
         
-        if melhor_escala:
-            flash_success(f'Escala mensal gerada com sucesso para {valencia}!')
+        if melhor_escala is not None:
+            salvo = otimizador.salvar_escala_otimizada(melhor_escala)
+            if salvo:
+                flash_success(f'Escala mensal gerada e salva com sucesso para {valencia}!')
+            else:
+                flash_error('Erro ao salvar a escala otimizada.')
         else:
             flash_error('Erro ao gerar escala. Verifique se há funcionários e turnos suficientes.')
         

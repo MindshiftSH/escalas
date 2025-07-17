@@ -45,6 +45,28 @@ class OtimizadorMensal:
             # Filtrar apenas dias de funcionamento
             self.dias = self.filtrar_dias_funcionamento(data_inicio, data_fim)
             
+            # Carregar restrições cadastradas no banco
+            restricoes_db = (
+                db.session.query(Restricao)
+                .join(Funcionario)
+                .filter(
+                    Funcionario.valencia == self.valencia,
+                    Restricao.data_fim >= data_inicio.date(),
+                    Restricao.data_inicio <= data_fim.date(),
+                )
+                .all()
+            )
+
+            self.restricoes = defaultdict(set)
+            for r in restricoes_db:
+                inicio = max(r.data_inicio, data_inicio.date())
+                fim = min(r.data_fim, data_fim.date())
+                dia_atual = inicio
+                while dia_atual <= fim:
+                    if dia_atual in self.dias:
+                        self.restricoes[r.funcionario_id].add(dia_atual)
+                    dia_atual += timedelta(days=1)
+
             # Aplicar rodízio automático se configurado
             if self.config and self.config.ativar_rodizio:
                 self.aplicar_rodizio_automatico()
@@ -62,6 +84,9 @@ class OtimizadorMensal:
             except Exception as e:
                 self.perfil_ideal = None
     
+            # Converter defaultdict para dict simples
+            self.restricoes = {k: v for k, v in self.restricoes.items()}
+            
     def filtrar_dias_funcionamento(self, data_inicio, data_fim):
         """Filtra apenas os dias de funcionamento baseado na configuração"""
         dias_funcionamento = []
