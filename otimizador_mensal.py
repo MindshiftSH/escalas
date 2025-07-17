@@ -160,7 +160,7 @@ class OtimizadorMensal:
             # Calcular offset baseado no ID do funcionário para distribuir o início do ciclo
             offset_funcionario = funcionario.id % len(self.funcionarios)
             
-            folgas_funcionario = 0
+            folgas_funcionario = []
             for dia in self.dias:  # Usar apenas dias de funcionamento
                 # Calcular posição no ciclo personalizado
                 dias_desde_inicio = (dia - self.config.data_inicio_rodizio).days
@@ -181,11 +181,41 @@ class OtimizadorMensal:
                     if funcionario.id not in self.restricoes:
                         self.restricoes[funcionario.id] = set()
                     self.restricoes[funcionario.id].add(dia)
-                    folgas_funcionario += 1
+                    folgas_funcionario.append(dia)
             
-            if folgas_funcionario > 0:
+            if folgas_funcionario:
                 funcionarios_com_rodizio += 1
-                print(f"  {funcionario.nome}: {folgas_funcionario} folgas aplicadas")
+                print(f"  {funcionario.nome}: {len(folgas_funcionario)} folgas aplicadas")
+                
+                # Verificar se as folgas estão em pares
+                folgas_ordenadas = sorted(folgas_funcionario)
+                pares_folgas = []
+                folgas_isoladas = []
+                
+                i = 0
+                while i < len(folgas_ordenadas):
+                    if i + 1 < len(folgas_ordenadas):
+                        # Verificar se são dias consecutivos
+                        if (folgas_ordenadas[i+1] - folgas_ordenadas[i]).days == 1:
+                            pares_folgas.append((folgas_ordenadas[i], folgas_ordenadas[i+1]))
+                            i += 2  # Pular o próximo dia
+                        else:
+                            folgas_isoladas.append(folgas_ordenadas[i])
+                            i += 1
+                    else:
+                        folgas_isoladas.append(folgas_ordenadas[i])
+                        i += 1
+                
+                print(f"    Pares de folgas: {len(pares_folgas)}")
+                for par in pares_folgas:
+                    print(f"      {par[0].strftime('%d/%m')} - {par[1].strftime('%d/%m')}")
+                
+                if folgas_isoladas:
+                    print(f"    ⚠️  Folgas isoladas: {len(folgas_isoladas)}")
+                    for folga in folgas_isoladas:
+                        print(f"      {folga.strftime('%d/%m')}")
+                else:
+                    print(f"    ✅ Todas as folgas estão em pares!")
         
         print(f"✅ Rodízio aplicado para {funcionarios_com_rodizio}/{len(self.funcionarios)} funcionários")
         
@@ -224,12 +254,42 @@ class OtimizadorMensal:
     
     def ajustar_folgas_para_preenchimento(self, funcionarios_por_dia):
         """Ajusta as folgas para garantir que haja funcionários suficientes para preencher todos os turnos"""
+        print("🔄 Iniciando ajuste de folgas para garantir preenchimento...")
+        
         # Calcular quantos dias de folga cada funcionário tem
         folgas_por_funcionario = {}
         for funcionario in self.funcionarios:
             folgas_por_funcionario[funcionario.id] = len(self.restricoes.get(funcionario.id, set()))
         
+        # Mostrar folgas antes do ajuste
+        print("Folgas antes do ajuste:")
+        for funcionario in self.funcionarios:
+            folgas_funcionario = sorted(self.restricoes.get(funcionario.id, set()))
+            if folgas_funcionario:
+                print(f"  {funcionario.nome}: {len(folgas_funcionario)} folgas")
+                # Verificar pares
+                pares = []
+                folgas_isoladas = []
+                i = 0
+                while i < len(folgas_funcionario):
+                    if i + 1 < len(folgas_funcionario):
+                        if (folgas_funcionario[i+1] - folgas_funcionario[i]).days == 1:
+                            pares.append((folgas_funcionario[i], folgas_funcionario[i+1]))
+                            i += 2
+                        else:
+                            folgas_isoladas.append(folgas_funcionario[i])
+                            i += 1
+                    else:
+                        folgas_isoladas.append(folgas_funcionario[i])
+                        i += 1
+                
+                if folgas_isoladas:
+                    print(f"    ⚠️  Folgas isoladas: {len(folgas_isoladas)}")
+                else:
+                    print(f"    ✅ Todas em pares: {len(pares)} pares")
+        
         # Para cada dia, verificar se há funcionários suficientes
+        folgas_removidas = 0
         for dia in self.dias:
             funcionarios_disponiveis = 0
             for funcionario in self.funcionarios:
@@ -242,24 +302,68 @@ class OtimizadorMensal:
             if funcionarios_disponiveis < necessarios:
                 print(f"  Dia {dia}: {funcionarios_disponiveis}/{necessarios} funcionários")
                 
-                # Encontrar funcionários com folga neste dia, ordenados por quem tem mais folgas
+                # Encontrar funcionários com folga neste dia
                 funcionarios_com_folga = []
                 for funcionario in self.funcionarios:
                     if dia in self.restricoes.get(funcionario.id, set()):
-                        funcionarios_com_folga.append((funcionario, folgas_por_funcionario[funcionario.id]))
+                        # Calcular se esta folga faz parte de um par
+                        folgas_funcionario = sorted(self.restricoes.get(funcionario.id, set()))
+                        folga_isolada = True
+                        
+                        # Verificar se esta folga faz parte de um par
+                        idx = folgas_funcionario.index(dia)
+                        if idx > 0 and (dia - folgas_funcionario[idx-1]).days == 1:
+                            folga_isolada = False
+                        elif idx < len(folgas_funcionario) - 1 and (folgas_funcionario[idx+1] - dia).days == 1:
+                            folga_isolada = False
+                        
+                        funcionarios_com_folga.append((funcionario, folgas_por_funcionario[funcionario.id], folga_isolada))
                 
-                # Ordenar por quem tem mais folgas (mais justo)
-                funcionarios_com_folga.sort(key=lambda x: x[1], reverse=True)
+                # Ordenar: primeiro folgas isoladas, depois por quem tem mais folgas
+                funcionarios_com_folga.sort(key=lambda x: (not x[2], -x[1]))
                 
                 # Remover folgas até ter funcionários suficientes
                 folgas_para_remover = necessarios - funcionarios_disponiveis
                 funcionarios_para_remover_folga = funcionarios_com_folga[:folgas_para_remover]
                 
-                for funcionario, _ in funcionarios_para_remover_folga:
+                for funcionario, _, folga_isolada in funcionarios_para_remover_folga:
                     if funcionario.id in self.restricoes:
                         self.restricoes[funcionario.id].discard(dia)
                         folgas_por_funcionario[funcionario.id] -= 1
-                        print(f"    Removida folga de {funcionario.nome} no dia {dia}")
+                        folgas_removidas += 1
+                        tipo_folga = "isolada" if folga_isolada else "em par"
+                        print(f"    Removida folga {tipo_folga} de {funcionario.nome} no dia {dia}")
+        
+        print(f"Total de folgas removidas: {folgas_removidas}")
+        
+        # Mostrar folgas após o ajuste
+        print("Folgas após o ajuste:")
+        for funcionario in self.funcionarios:
+            folgas_funcionario = sorted(self.restricoes.get(funcionario.id, set()))
+            if folgas_funcionario:
+                print(f"  {funcionario.nome}: {len(folgas_funcionario)} folgas")
+                # Verificar pares
+                pares = []
+                folgas_isoladas = []
+                i = 0
+                while i < len(folgas_funcionario):
+                    if i + 1 < len(folgas_funcionario):
+                        if (folgas_funcionario[i+1] - folgas_funcionario[i]).days == 1:
+                            pares.append((folgas_funcionario[i], folgas_funcionario[i+1]))
+                            i += 2
+                        else:
+                            folgas_isoladas.append(folgas_funcionario[i])
+                            i += 1
+                    else:
+                        folgas_isoladas.append(folgas_funcionario[i])
+                        i += 1
+                
+                if folgas_isoladas:
+                    print(f"    ⚠️  Folgas isoladas: {len(folgas_isoladas)}")
+                    for folga in folgas_isoladas:
+                        print(f"      {folga.strftime('%d/%m')}")
+                else:
+                    print(f"    ✅ Todas em pares: {len(pares)} pares")
         
         # Recalcular estatísticas
         total_funcionarios_disponiveis = 0
